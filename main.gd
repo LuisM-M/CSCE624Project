@@ -78,7 +78,7 @@ func _spawn_new_target() -> void:
 
 
 func _export_to_csv() -> void:
-	var file_path = "user://trajectory_data.csv"
+	var file_path = "res://trajectory_data.csv"
 	var file = FileAccess.open(file_path, FileAccess.WRITE)
 	if file == null:
 		push_error("Failed to open CSV file for writing: " + file_path)
