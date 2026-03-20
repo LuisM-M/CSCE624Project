@@ -14,7 +14,11 @@ background_mode = 2
 sky = SubResource("Sky_0xm2m")
 tonemap_mode = 2
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gbr8i"]
+albedo_color = Color(0.045761496, 0.43861473, 0.69516945, 1)
+
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_gbr8i"]
+material = SubResource("StandardMaterial3D_gbr8i")
 radius = 0.25
 height = 0.5
 
@@ -35,7 +39,7 @@ shadow_enabled = true
 
 [node name="CSGBox3D" type="CSGBox3D" parent="." unique_id=866391719]
 use_collision = true
-size = Vector3(20, 0.1, 20)
+size = Vector3(50, 0.1, 50)
 
 [node name="RigidBody3D" type="RigidBody3D" parent="." unique_id=1085080588]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4673072, 0)
@@ -47,9 +51,10 @@ mesh = SubResource("CapsuleMesh_gbr8i")
 shape = SubResource("BoxShape3D_ekifn")
 debug_color = Color(0.73528427, 0.31658065, 0.8707082, 0.41960785)
 
-[node name="CharacterBody3D" type="CharacterBody3D" parent="." unique_id=1958535996]
+[node name="CharacterBody3D" type="CharacterBody3D" parent="." unique_id=1958535996 node_paths=PackedStringArray("target_node")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.39166558, 1.086937, 0.95390534)
 script = ExtResource("1_gbr8i")
+target_node = NodePath("../RigidBody3D")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="CharacterBody3D" unique_id=318764486]
 shape = SubResource("CapsuleShape3D_ekifn")
