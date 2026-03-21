@@ -10,8 +10,13 @@ ground_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
 sky_material = SubResource("ProceduralSkyMaterial_ig7tw")
 
 [sub_resource type="Environment" id="Environment_h2yge"]
-background_mode = 2
+background_mode = 1
+background_color = Color(0.6235599, 0.62355983, 0.62355983, 1)
 sky = SubResource("Sky_0xm2m")
+ambient_light_source = 2
+ambient_light_color = Color(0.46034718, 0.46034718, 0.46034712, 1)
+ambient_light_energy = 1.83
+reflected_light_source = 1
 tonemap_mode = 2
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gbr8i"]
@@ -19,10 +24,9 @@ albedo_color = Color(0.045761496, 0.43861473, 0.69516945, 1)
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_gbr8i"]
 material = SubResource("StandardMaterial3D_gbr8i")
-radius = 0.25
-height = 0.5
+height = 1.0
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_ekifn"]
+[sub_resource type="SphereShape3D" id="SphereShape3D_gbr8i"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_ekifn"]
 
@@ -34,7 +38,7 @@ height = 0.5
 environment = SubResource("Environment_h2yge")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=855407413]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 0, 0)
+transform = Transform3D(-0.21286821, -0.87562454, -0.43355384, -0.0710315, -0.42868137, 0.9006591, -0.97449553, 0.22251768, 0.029055737, 0, 0, 0)
 shadow_enabled = true
 
 [node name="CSGBox3D" type="CSGBox3D" parent="." unique_id=866391719]
@@ -43,16 +47,17 @@ size = Vector3(50, 0.1, 50)
 
 [node name="RigidBody3D" type="RigidBody3D" parent="." unique_id=1085080588]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4673072, 0)
+gravity_scale = 0.0
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="RigidBody3D" unique_id=1471816204]
 mesh = SubResource("CapsuleMesh_gbr8i")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="RigidBody3D" unique_id=420863108]
-shape = SubResource("BoxShape3D_ekifn")
+shape = SubResource("SphereShape3D_gbr8i")
 debug_color = Color(0.73528427, 0.31658065, 0.8707082, 0.41960785)
 
 [node name="CharacterBody3D" type="CharacterBody3D" parent="." unique_id=1958535996 node_paths=PackedStringArray("target_node")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.39166558, 1.086937, 0.95390534)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.092306, 1.086937, 0.4372257)
 script = ExtResource("1_gbr8i")
 target_node = NodePath("../RigidBody3D")
 
@@ -61,6 +66,7 @@ shape = SubResource("CapsuleShape3D_ekifn")
 debug_color = Color(0.8528828, 0.2830491, 0.6117608, 0.41960785)
 
 [node name="Camera3D" type="Camera3D" parent="CharacterBody3D" unique_id=2029013125]
+fov = 95.0
 
 [node name="RayCast3D" type="RayCast3D" parent="CharacterBody3D/Camera3D" unique_id=2038798195]
 target_position = Vector3(0, 0, -50)
@@ -76,9 +82,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = -16.0
-offset_bottom = -16.0
+offset_left = -6.0
+offset_top = -4.0
+offset_right = 2.0
+offset_bottom = 4.0
 grow_horizontal = 2
 grow_vertical = 2
+color = Color(0, 0, 0, 1)
