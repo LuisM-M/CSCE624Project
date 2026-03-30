@@ -45,21 +45,21 @@ shadow_enabled = true
 use_collision = true
 size = Vector3(50, 0.1, 50)
 
-[node name="RigidBody3D" type="RigidBody3D" parent="." unique_id=1085080588]
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=1085080588]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4673072, 0)
 gravity_scale = 0.0
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="RigidBody3D" unique_id=1471816204]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="StaticBody3D" unique_id=1471816204]
 mesh = SubResource("CapsuleMesh_gbr8i")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="RigidBody3D" unique_id=420863108]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=420863108]
 shape = SubResource("SphereShape3D_gbr8i")
 debug_color = Color(0.73528427, 0.31658065, 0.8707082, 0.41960785)
 
 [node name="CharacterBody3D" type="CharacterBody3D" parent="." unique_id=1958535996 node_paths=PackedStringArray("target_node")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.092306, 1.086937, 0.4372257)
 script = ExtResource("1_gbr8i")
-target_node = NodePath("../RigidBody3D")
+target_node = NodePath("../StaticBody3D")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="CharacterBody3D" unique_id=318764486]
 shape = SubResource("CapsuleShape3D_ekifn")
