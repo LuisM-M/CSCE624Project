@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="myFirstProject"
-run/main_scene="uid://cbt3ca5ra53yi"
+run/main_scene="uid://7l4gkaialffe"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 

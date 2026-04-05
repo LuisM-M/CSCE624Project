@@ -1,19 +1,46 @@
 extends CharacterBody3D
 
 const MOUSE_SENSITIVITY = 0.003
+const TRIALS_PER_DIFFICULTY = 24
 
 @onready var camera = $Camera3D
 @onready var raycast = $Camera3D/RayCast3D
 @export var target_node: Node3D
+@export var participant_id: String = "unknown"
 
-var target_positions: Array[Vector3] = [
-	Vector3(0, 1.5, -5),
-	Vector3(-3, 2, -8),
-	Vector3(3, 1, -6),
-	Vector3(0, 3, -10),
-	Vector3(-4, 1.25, -4)
+# Easy / Medium / Hard target sets
+# Same general directional structure, larger offsets for higher difficulty.
+var easy_targets: Array[Vector3] = [
+	Vector3(-10.0, 1.8, -8.0), # left
+	Vector3(-4.0, 1.8, -8.0),  # right
+	Vector3(-7.0, 3.4, -8.0),  # up
+	Vector3(-9.0, 3.0, -8.0),  # up-left
+	Vector3(-5.0, 3.0, -8.0),  # up-right
+	Vector3(-10.5, 2.4, -8.0), # far-left
+	Vector3(-3.5, 2.4, -8.0),  # far-right
+	Vector3(-7.0, 4.0, -8.0)   # high-up
 ]
-var current_target_index = 0
+
+
+var hard_targets: Array[Vector3] = [
+	Vector3(-12.4, 1.8, -8.0), # left
+	Vector3(-1.6, 1.8, -8.0),  # right
+	Vector3(-7.0, 4.5, -8.0),  # up
+	Vector3(-11.0, 3.9, -8.0), # up-left
+	Vector3(-3.0, 3.9, -8.0),  # up-right
+	Vector3(-12.6, 2.5, -8.0), # far-left
+	Vector3(-1.4, 2.5, -8.0),  # far-right
+	Vector3(-7.0, 4.9, -8.0)   # high-up
+]
+
+# Each trial will be a dictionary like:
+# {
+#   "difficulty": "easy",
+#   "target_index": 3,
+#   "target_position": Vector3(...)
+# }
+var trial_sequence: Array = []
+var current_trial_index: int = 0
 
 # --- DATA LOGGING VARIABLES ---
 var start_time: int = 0
@@ -24,19 +51,21 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	start_time = Time.get_ticks_msec()
 
-	# Put the target at the initial position explicitly.
-	target_node.global_position = target_positions[current_target_index]
+	build_trial_sequence()
 
 	# Create CSV header
 	tracking_data.append(
-		"Timestamp_ms,Event_Type,Cam_Rot_X,Player_Rot_Y,Target_Index,Target_Pos_X,Target_Pos_Y,Target_Pos_Z"
+		"Timestamp_ms,Event_Type,Difficulty,Trial_Index,Cam_Rot_X,Player_Rot_Y,Target_Index,Target_Pos_X,Target_Pos_Y,Target_Pos_Z"
 	)
 
-	# Log the very first target spawn
-	log_target_spawned()
+	if trial_sequence.is_empty():
+		push_error("Trial sequence is empty.")
+		return
+
+	start_current_trial()
 
 func _input(event: InputEvent) -> void:
-	# Press Escape to save and quit
+	# Press Escape to save and quit early
 	if event is InputEventKey and event.keycode == KEY_ESCAPE and event.pressed:
 		save_data_to_csv()
 		get_tree().quit()
@@ -54,21 +83,69 @@ func _input(event: InputEvent) -> void:
 		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 			shoot()
 
+func build_trial_sequence() -> void:
+	trial_sequence.clear()
+
+	append_trials_for_difficulty("easy", easy_targets)
+	append_trials_for_difficulty("hard", hard_targets)
+
+func append_trials_for_difficulty(difficulty_name: String, target_array: Array[Vector3]) -> void:
+	var target_count = target_array.size()
+	if target_count == 0:
+		return
+
+	for i in range(TRIALS_PER_DIFFICULTY):
+		var target_index = i % target_count
+		trial_sequence.append({
+			"difficulty": difficulty_name,
+			"target_index": target_index,
+			"target_position": target_array[target_index]
+		})
+
+func start_current_trial() -> void:
+	if current_trial_index >= trial_sequence.size():
+		print("All trials complete.")
+		save_data_to_csv()
+		get_tree().quit()
+		return
+
+	reset_aim_to_center()
+
+	var target_pos = current_target_position()
+	target_node.global_position = target_pos
+
+	log_target_spawned()
+
+func reset_aim_to_center() -> void:
+	rotation.y = 0.0
+	camera.rotation.x = 0.0
+
 func current_timestamp() -> int:
 	return Time.get_ticks_msec() - start_time
 
+func current_trial_data() -> Dictionary:
+	return trial_sequence[current_trial_index]
+
+func current_difficulty() -> String:
+	return str(current_trial_data().get("difficulty", "unknown"))
+
+func current_target_index() -> int:
+	return int(current_trial_data().get("target_index", -1))
+
 func current_target_position() -> Vector3:
-	return target_positions[current_target_index]
+	return current_trial_data().get("target_position", Vector3.ZERO)
 
 func log_target_spawned() -> void:
 	var timestamp = current_timestamp()
 	var target_pos = current_target_position()
 
-	var log_string = "%d,TargetSpawned,%f,%f,%d,%f,%f,%f" % [
+	var log_string = "%d,TargetSpawned,%s,%d,%f,%f,%d,%f,%f,%f" % [
 		timestamp,
+		current_difficulty(),
+		current_trial_index,
 		camera.rotation.x,
 		rotation.y,
-		current_target_index,
+		current_target_index(),
 		target_pos.x,
 		target_pos.y,
 		target_pos.z
@@ -77,14 +154,19 @@ func log_target_spawned() -> void:
 	tracking_data.append(log_string)
 
 func log_mouse_move() -> void:
+	if current_trial_index >= trial_sequence.size():
+		return
+
 	var timestamp = current_timestamp()
 	var target_pos = current_target_position()
 
-	var log_string = "%d,MouseMove,%f,%f,%d,%f,%f,%f" % [
+	var log_string = "%d,MouseMove,%s,%d,%f,%f,%d,%f,%f,%f" % [
 		timestamp,
+		current_difficulty(),
+		current_trial_index,
 		camera.rotation.x,
 		rotation.y,
-		current_target_index,
+		current_target_index(),
 		target_pos.x,
 		target_pos.y,
 		target_pos.z
@@ -93,6 +175,9 @@ func log_mouse_move() -> void:
 	tracking_data.append(log_string)
 
 func shoot() -> void:
+	if current_trial_index >= trial_sequence.size():
+		return
+
 	total_shots += 1
 	var timestamp = current_timestamp()
 	var hit_index = -1
@@ -104,11 +189,12 @@ func shoot() -> void:
 		var hit_object = raycast.get_collider()
 
 		if hit_object == target_node:
-			hit_index = current_target_index
+			hit_index = current_target_index()
 
-			# Log the successful shot before advancing target
-			var hit_log = "%d,ShotFired,%f,%f,%d,%f,%f,%f" % [
+			var hit_log = "%d,ShotFired,%s,%d,%f,%f,%d,%f,%f,%f" % [
 				timestamp,
+				current_difficulty(),
+				current_trial_index,
 				camera.rotation.x,
 				rotation.y,
 				hit_index,
@@ -118,20 +204,15 @@ func shoot() -> void:
 			]
 			tracking_data.append(hit_log)
 
-			# Advance target
-			current_target_index += 1
-			if current_target_index >= target_positions.size():
-				current_target_index = 0
-
-			target_node.global_position = target_positions[current_target_index]
-
-			# Log the next target spawn
-			log_target_spawned()
+			current_trial_index += 1
+			start_current_trial()
 			return
 
 	# Miss case
-	var miss_log = "%d,ShotFired,%f,%f,%d,%f,%f,%f" % [
+	var miss_log = "%d,ShotFired,%s,%d,%f,%f,%d,%f,%f,%f" % [
 		timestamp,
+		current_difficulty(),
+		current_trial_index,
 		camera.rotation.x,
 		rotation.y,
 		hit_index,
@@ -142,7 +223,10 @@ func shoot() -> void:
 	tracking_data.append(miss_log)
 
 func save_data_to_csv() -> void:
-	var filename = "user://aim_trial_data_%d.csv" % Time.get_unix_time_from_system()
+	var filename = "user://%s_aim_trial_data_%d.csv" % [
+		participant_id,
+		Time.get_unix_time_from_system()
+	]
 	var file = FileAccess.open(filename, FileAccess.WRITE)
 
 	if file == null:
