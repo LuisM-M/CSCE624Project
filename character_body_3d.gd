@@ -3,6 +3,7 @@ extends CharacterBody3D
 const MOUSE_SENSITIVITY = 0.003
 const TRIALS_PER_DIFFICULTY = 24
 
+
 @onready var camera = $Camera3D
 @onready var raycast = $Camera3D/RayCast3D
 @export var target_node: Node3D
@@ -11,26 +12,32 @@ const TRIALS_PER_DIFFICULTY = 24
 # Easy / Medium / Hard target sets
 # Same general directional structure, larger offsets for higher difficulty.
 var easy_targets: Array[Vector3] = [
-	Vector3(-10.0, 1.8, -8.0), # left
-	Vector3(-4.0, 1.8, -8.0),  # right
-	Vector3(-7.0, 3.4, -8.0),  # up
-	Vector3(-9.0, 3.0, -8.0),  # up-left
-	Vector3(-5.0, 3.0, -8.0),  # up-right
-	Vector3(-10.5, 2.4, -8.0), # far-left
-	Vector3(-3.5, 2.4, -8.0),  # far-right
-	Vector3(-7.0, 4.0, -8.0)   # high-up
+	Vector3(-10.6, 3.4, -8.0), # left
+	Vector3(-3.4, 3.4, -8.0),  # right
+
+	Vector3(-7.0, 6.0, -8.0),  # up
+	Vector3(-7.0, 2.1, -8.0),  # down
+
+	Vector3(-9.6, 4.4, -8.0),  # up-left
+	Vector3(-4.4, 4.4, -8.0),  # up-right
+
+	Vector3(-9.6, 2.4, -8.0),  # down-left
+	Vector3(-4.4, 2.4, -8.0)   # down-right
 ]
 
 
 var hard_targets: Array[Vector3] = [
-	Vector3(-12.4, 1.8, -8.0), # left
-	Vector3(-1.6, 1.8, -8.0),  # right
-	Vector3(-7.0, 4.5, -8.0),  # up
-	Vector3(-11.0, 3.9, -8.0), # up-left
-	Vector3(-3.0, 3.9, -8.0),  # up-right
-	Vector3(-12.6, 2.5, -8.0), # far-left
-	Vector3(-1.4, 2.5, -8.0),  # far-right
-	Vector3(-7.0, 4.9, -8.0)   # high-up
+	Vector3(-12.8, 3.4, -8.0), # left
+	Vector3(-1.2, 3.4, -8.0),  # right
+
+	Vector3(-7.0, 7.0, -8.0),  # up
+	Vector3(-7.0, 1.4, -8.0),  # down
+
+	Vector3(-11.4, 4.8, -8.0), # up-left
+	Vector3(-2.6, 4.8, -8.0),  # up-right
+
+	Vector3(-11.4, 2.0, -8.0), # down-left
+	Vector3(-2.6, 2.0, -8.0)   # down-right
 ]
 
 # Each trial will be a dictionary like:
@@ -118,7 +125,7 @@ func start_current_trial() -> void:
 
 func reset_aim_to_center() -> void:
 	rotation.y = 0.0
-	camera.rotation.x = 0.0
+	camera.rotation.x = 0.3
 
 func current_timestamp() -> int:
 	return Time.get_ticks_msec() - start_time
