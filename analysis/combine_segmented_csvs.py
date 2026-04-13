@@ -20,8 +20,10 @@ def get_segmented_files(folder):
         if filename == os.path.basename(OUTPUT_FILE):
             continue
 
-        if filename.endswith("_segmented_trials.csv"):
-            files.append(full_path)
+        if not filename.endswith("_segmented_trials.csv"):
+            continue
+
+        files.append(full_path)
 
     return sorted(files)
 
@@ -32,6 +34,7 @@ def combine_csvs(input_files, output_file):
         return
 
     header_written = False
+    total_rows = 0
 
     with open(output_file, "w", newline="", encoding="utf-8") as outfile:
         writer = None
@@ -56,9 +59,11 @@ def combine_csvs(input_files, output_file):
                 for row in reader:
                     if row:
                         writer.writerow(row)
+                        total_rows += 1
 
     print(f"\nCombined CSV saved to:\n{output_file}")
     print(f"Total files combined: {len(input_files)}")
+    print(f"Total data rows written: {total_rows}")
 
 
 def main():
@@ -71,6 +76,10 @@ def main():
     if len(input_files) == 0:
         print("No participant CSVs found in processed folder.")
         return
+
+    print("Files to combine:")
+    for file in input_files:
+        print(f"  {file}")
 
     combine_csvs(input_files, OUTPUT_FILE)
 

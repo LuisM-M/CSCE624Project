@@ -9,21 +9,40 @@ def distance_xy(x1, y1, x2, y2):
     return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
 
-def point_distance(p1, p2):
-    return math.sqrt((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2)
+def parse_filename_metadata(path):
+    """
+    Expected filename format:
+    <participant>_<session>_raw.csv
 
+    Examples:
+    richard_s1_raw.csv
+    alex_s2_raw.csv
 
-def parse_participant_id_from_filename(path):
+    Returns:
+    (participant_id, session_id)
+    """
     base = os.path.basename(path)
-    return base.split("_")[0]
+    name_without_ext = os.path.splitext(base)[0]
+    parts = name_without_ext.split("_")
+
+    if len(parts) < 3:
+        raise ValueError(
+            f"Filename '{base}' does not match expected format "
+            f"'<participant>_<session>_raw.csv'"
+        )
+
+    participant_id = parts[0]
+    session_id = parts[1]
+
+    return participant_id, session_id
 
 
 def process_csv(input_path):
     trials = []
     current_trial = None
-    participant_id = parse_participant_id_from_filename(input_path)
+    participant_id, session_id = parse_filename_metadata(input_path)
 
-    with open(input_path, newline="") as csvfile:
+    with open(input_path, newline="", encoding="utf-8") as csvfile:
         reader = csv.DictReader(csvfile)
 
         for row in reader:
@@ -42,6 +61,7 @@ def process_csv(input_path):
             if event == "TargetSpawned":
                 current_trial = {
                     "participant_id": participant_id,
+                    "session_id": session_id,
                     "difficulty": difficulty,
                     "trial_index": trial_index,
                     "spawn_time": timestamp,
@@ -53,7 +73,6 @@ def process_csv(input_path):
 
             elif event == "MouseMove" and current_trial is not None:
                 # Store points as (x, y, t), where x=player_y and y=cam_x
-                # This keeps the trajectory in a consistent 2D aim space.
                 current_trial["points"].append((player_y, cam_x, timestamp))
 
             elif event == "ShotFired" and current_trial is not None:
@@ -97,9 +116,6 @@ def compute_segment_velocities(points):
 
 
 def compute_direction_changes(points):
-    """
-    Count sign changes in turning angle between consecutive segments.
-    """
     if len(points) < 4:
         return 0
 
@@ -121,7 +137,6 @@ def compute_direction_changes(points):
             turn_signs.append(1)
         elif cross < -1e-12:
             turn_signs.append(-1)
-        # ignore near-zero turns
 
     changes = 0
     for i in range(1, len(turn_signs)):
@@ -140,11 +155,6 @@ def compute_bbox(points):
 
 
 def compute_initial_angle_features(points):
-    """
-    Rubine features 1 and 2:
-    cosine and sine of initial angle.
-    Uses first point and first later point with non-zero distance.
-    """
     eps = 1e-12
     x0, y0, _ = points[0]
 
@@ -160,14 +170,6 @@ def compute_initial_angle_features(points):
 
 
 def compute_rubine_rotation_features(points):
-    """
-    Rubine features 9, 10, 11:
-    total relative rotation,
-    total absolute rotation,
-    total squared rotation.
-
-    Uses atan2 on cross/dot form for angle between consecutive segments.
-    """
     if len(points) < 3:
         return 0.0, 0.0, 0.0
 
@@ -185,7 +187,6 @@ def compute_rubine_rotation_features(points):
         dx_curr = x2 - x1
         dy_curr = y2 - y1
 
-        # Skip zero-length segments
         if (abs(dx_prev) < 1e-12 and abs(dy_prev) < 1e-12) or (
             abs(dx_curr) < 1e-12 and abs(dy_curr) < 1e-12
         ):
@@ -204,32 +205,21 @@ def compute_rubine_rotation_features(points):
 
 
 def compute_rubine_features(points):
-    """
-    Returns Rubine-style features F1-F13
-    based on 2D points formatted as (x, y, t).
-    """
     eps = 1e-12
 
-    # F1, F2: initial angle cosine/sine
     f1, f2 = compute_initial_angle_features(points)
 
-    # Bounding box
     xmin, xmax, ymin, ymax = compute_bbox(points)
     width = xmax - xmin
     height = ymax - ymin
 
-    # F3: bounding box diagonal length
     f3 = math.sqrt(width * width + height * height)
-
-    # F4: bounding box angle
     f4 = math.atan2(height, width)
 
-    # F5: distance between endpoints
     x_start, y_start, _ = points[0]
     x_end, y_end, _ = points[-1]
     f5 = distance_xy(x_start, y_start, x_end, y_end)
 
-    # F6, F7: cosine and sine of overall angle
     if f5 > eps:
         f6 = (x_end - x_start) / f5
         f7 = (y_end - y_start) / f5
@@ -237,19 +227,15 @@ def compute_rubine_features(points):
         f6 = 0.0
         f7 = 0.0
 
-    # F8: stroke length
     f8 = compute_path_length(points)
 
-    # F9, F10, F11: rotation features
     f9, f10, f11 = compute_rubine_rotation_features(points)
 
-    # F12: max speed squared
     velocities = compute_segment_velocities(points)
     f12 = 0.0
     if velocities:
         f12 = max(v * v for v in velocities)
 
-    # F13: total duration
     f13 = points[-1][2] - points[0][2]
 
     return {
@@ -303,16 +289,15 @@ def extract_features(trials):
 
         row = {
             "participant_id": trial["participant_id"],
+            "session_id": trial["session_id"],
             "difficulty": trial["difficulty"],
             "trial_index": trial["trial_index"],
             "target_index": trial["target_index"],
-
             "duration_ms": duration,
             "path_length": path_length,
             "mean_velocity": mean_velocity,
             "num_points": len(points),
             "misses": trial["misses"],
-
             "straight_line_distance": straight_line_distance,
             "efficiency_ratio": efficiency_ratio,
             "max_velocity": max_velocity,
@@ -333,7 +318,7 @@ def write_output(rows, output_path):
         print("No trials found.")
         return
 
-    with open(output_path, "w", newline="") as csvfile:
+    with open(output_path, "w", newline="", encoding="utf-8") as csvfile:
         fieldnames = rows[0].keys()
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
@@ -343,7 +328,7 @@ def write_output(rows, output_path):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python segment_trials.py <input_csv_path>")
+        print("Usage: python analysis/segment_trials.py <input_csv_path>")
         sys.exit(1)
 
     input_path = sys.argv[1]
@@ -352,9 +337,9 @@ def main():
         print(f"Error: file not found: {input_path}")
         sys.exit(1)
 
-    participant_id = parse_participant_id_from_filename(input_path)
+    participant_id, session_id = parse_filename_metadata(input_path)
 
-    output_filename = f"{participant_id}_segmented_trials.csv"
+    output_filename = f"{participant_id}_{session_id}_segmented_trials.csv"
     output_path = os.path.join(
         os.path.dirname(input_path).replace("raw", "processed"),
         output_filename
