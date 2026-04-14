@@ -293,12 +293,9 @@ def extract_features(trials):
             "difficulty": trial["difficulty"],
             "trial_index": trial["trial_index"],
             "target_index": trial["target_index"],
-            "duration_ms": duration,
-            "path_length": path_length,
             "mean_velocity": mean_velocity,
             "num_points": len(points),
             "misses": trial["misses"],
-            "straight_line_distance": straight_line_distance,
             "efficiency_ratio": efficiency_ratio,
             "max_velocity": max_velocity,
             "velocity_std": velocity_std,
@@ -340,10 +337,14 @@ def main():
     participant_id, session_id = parse_filename_metadata(input_path)
 
     output_filename = f"{participant_id}_{session_id}_segmented_trials.csv"
-    output_path = os.path.join(
-        os.path.dirname(input_path).replace("raw", "processed"),
-        output_filename
+
+    repo_processed_dir = os.path.join(
+        os.path.dirname(__file__),
+        "data",
+        "processed"
     )
+
+    output_path = os.path.join(repo_processed_dir, output_filename)
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
