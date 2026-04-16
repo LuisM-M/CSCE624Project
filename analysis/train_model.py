@@ -4,6 +4,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from collections import Counter
+
 
 INPUT_FILE = "analysis/data/processed/all_segmented_trials.csv"
 
@@ -11,6 +13,8 @@ NON_FEATURE_COLUMNS = [
     "participant_id",
     "session_id",
     "difficulty",
+    "trial_index",
+    "target_index",
 ]
 
 
@@ -62,7 +66,60 @@ def print_confusion_matrix_with_labels(y_test, preds, labels):
     print(cm_df)
 
 
-def run_logistic_regression(X_train, X_test, y_train, y_test):
+def evaluate_session_level(test_df: pd.DataFrame, preds, model_name: str):
+    """
+    Groups stroke-level predictions by true session and evaluates
+    majority-vote session classification.
+
+    Since session_id alone is not unique across participants
+    (everyone has s1/s2/s3), we group by:
+        (participant_id, session_id)
+    """
+
+    eval_df = test_df[["participant_id", "session_id"]].copy()
+    eval_df["predicted_participant"] = preds
+
+    grouped = eval_df.groupby(["participant_id", "session_id"])
+
+    session_results = []
+    correct_sessions = 0
+    total_sessions = 0
+
+    for (true_participant, session_id), group in grouped:
+        vote_counts = Counter(group["predicted_participant"])
+        predicted_participant = vote_counts.most_common(1)[0][0]
+
+        is_correct = predicted_participant == true_participant
+        if is_correct:
+            correct_sessions += 1
+        total_sessions += 1
+
+        session_results.append({
+            "true_participant": true_participant,
+            "session_id": session_id,
+            "predicted_participant": predicted_participant,
+            "num_strokes": len(group),
+            "vote_counts": dict(vote_counts),
+            "correct": is_correct,
+        })
+
+    session_accuracy = correct_sessions / total_sessions if total_sessions > 0 else 0.0
+
+    print(f"\n=== {model_name} Session-Level Majority Vote ===")
+    print(f"Session Accuracy: {session_accuracy:.4f}")
+    print("\nSession Predictions:")
+
+    for result in session_results:
+        print(
+            f"{result['true_participant']}_{result['session_id']} "
+            f"-> predicted {result['predicted_participant']} | "
+            f"strokes={result['num_strokes']} | "
+            f"votes={result['vote_counts']} | "
+            f"correct={result['correct']}"
+        )
+
+
+def run_logistic_regression(X_train, X_test, y_train, y_test, test_df):
     labels = sorted(y_train.unique())
 
     model = Pipeline([
@@ -74,13 +131,15 @@ def run_logistic_regression(X_train, X_test, y_train, y_test):
     preds = model.predict(X_test)
 
     print("\n=== Logistic Regression ===")
-    print("Accuracy:", accuracy_score(y_test, preds))
+    print("Stroke-Level Accuracy:", accuracy_score(y_test, preds))
     print("\nClassification Report:")
     print(classification_report(y_test, preds, labels=labels))
     print_confusion_matrix_with_labels(y_test, preds, labels)
 
+    evaluate_session_level(test_df, preds, "Logistic Regression")
 
-def run_random_forest(X_train, X_test, y_train, y_test, feature_cols):
+
+def run_random_forest(X_train, X_test, y_train, y_test, feature_cols, test_df):
     labels = sorted(y_train.unique())
 
     model = RandomForestClassifier(
@@ -92,7 +151,7 @@ def run_random_forest(X_train, X_test, y_train, y_test, feature_cols):
     preds = model.predict(X_test)
 
     print("\n=== Random Forest ===")
-    print("Accuracy:", accuracy_score(y_test, preds))
+    print("Stroke-Level Accuracy:", accuracy_score(y_test, preds))
     print("\nClassification Report:")
     print(classification_report(y_test, preds, labels=labels))
     print_confusion_matrix_with_labels(y_test, preds, labels)
@@ -102,6 +161,8 @@ def run_random_forest(X_train, X_test, y_train, y_test, feature_cols):
 
     print("\nTop 10 Feature Importances:")
     print(importances.head(10))
+
+    evaluate_session_level(test_df, preds, "Random Forest")
 
 
 def main():
@@ -119,8 +180,8 @@ def main():
 
     print_dataset_summary(train_df, test_df)
 
-    run_logistic_regression(X_train, X_test, y_train, y_test)
-    run_random_forest(X_train, X_test, y_train, y_test, feature_cols)
+    run_logistic_regression(X_train, X_test, y_train, y_test, test_df)
+    run_random_forest(X_train, X_test, y_train, y_test, feature_cols, test_df)
 
 
 if __name__ == "__main__":
