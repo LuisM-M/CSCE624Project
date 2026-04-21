@@ -1,0 +1,138 @@
+Loaded rows: 1008
+Participants: ['jared', 'johnny', 'luis', 'pratt', 'richard', 'vish', 'zach']
+Sessions: ['s1', 's2', 's3']
+Num features: 22
+Feature columns:
+['mean_velocity', 'num_points', 'misses', 'efficiency_ratio', 'max_velocity', 'velocity_std', 'direction_changes', 'bbox_width', 'bbox_height', 'rubine_f1_initial_cos', 'rubine_f2_initial_sin', 'rubine_f3_bbox_diag', 'rubine_f4_bbox_angle', 'rubine_f5_endpoint_dist', 'rubine_f6_overall_cos', 'rubine_f7_overall_sin', 'rubine_f8_stroke_length', 'rubine_f9_total_rotation', 'rubine_f10_total_abs_rotation', 'rubine_f11_total_sq_rotation', 'rubine_f12_max_speed_sq', 'rubine_f13_duration']
+
+=== Dataset Summary ===
+Train rows: 672
+Test rows: 336
+
+Train rows by participant:
+participant_id
+jared      96
+johnny     96
+luis       96
+pratt      96
+richard    96
+vish       96
+zach       96
+Name: count, dtype: int64
+
+Test rows by participant:
+participant_id
+jared      48
+johnny     48
+luis       48
+pratt      48
+richard    48
+vish       48
+zach       48
+Name: count, dtype: int64
+
+Train rows by session:
+session_id
+s1    336
+s2    336
+Name: count, dtype: int64
+
+Test rows by session:
+session_id
+s3    336
+Name: count, dtype: int64
+
+=== Logistic Regression ===
+Stroke-Level Accuracy: 0.5238095238095238
+
+Classification Report:
+              precision    recall  f1-score   support
+
+       jared       0.33      0.44      0.38        48
+      johnny       0.33      0.27      0.30        48
+        luis       0.49      0.69      0.57        48
+       pratt       0.78      0.52      0.62        48
+     richard       0.41      0.44      0.42        48
+        vish       0.48      0.33      0.40        48
+        zach       0.96      0.98      0.97        48
+
+    accuracy                           0.52       336
+   macro avg       0.54      0.52      0.52       336
+weighted avg       0.54      0.52      0.52       336
+
+
+Confusion Matrix:
+         jared  johnny  luis  pratt  richard  vish  zach
+jared       21      11     0      0       15     1     0
+johnny      10      13     7      1       12     4     1
+luis         4       2    33      3        1     5     0
+pratt        2       4    11     25        1     5     0
+richard     20       1     3      1       21     2     0
+vish         6       9    13      2        1    16     1
+zach         1       0     0      0        0     0    47
+
+=== Logistic Regression Session-Level Majority Vote ===
+Session Accuracy: 1.0000
+
+Session Predictions:
+jared_s3 -> predicted jared | strokes=48 | votes={'johnny': 11, 'jared': 21, 'richard': 15, 'vish': 1} | correct=True
+johnny_s3 -> predicted johnny | strokes=48 | votes={'vish': 4, 'jared': 10, 'johnny': 13, 'richard': 12, 'luis': 7, 'zach': 1, 'pratt': 1} | correct=True       
+luis_s3 -> predicted luis | strokes=48 | votes={'vish': 5, 'luis': 33, 'pratt': 3, 'jared': 4, 'johnny': 2, 'richard': 1} | correct=True
+pratt_s3 -> predicted pratt | strokes=48 | votes={'richard': 1, 'pratt': 25, 'vish': 5, 'johnny': 4, 'luis': 11, 'jared': 2} | correct=True
+richard_s3 -> predicted richard | strokes=48 | votes={'vish': 2, 'jared': 20, 'richard': 21, 'johnny': 1, 'luis': 3, 'pratt': 1} | correct=True
+vish_s3 -> predicted vish | strokes=48 | votes={'johnny': 9, 'luis': 13, 'jared': 6, 'vish': 16, 'richard': 1, 'pratt': 2, 'zach': 1} | correct=True
+zach_s3 -> predicted zach | strokes=48 | votes={'zach': 47, 'jared': 1} | correct=True
+
+=== Random Forest ===
+Stroke-Level Accuracy: 0.4791666666666667
+
+Classification Report:
+              precision    recall  f1-score   support
+
+       jared       0.44      0.54      0.49        48
+      johnny       0.31      0.27      0.29        48
+        luis       0.36      0.54      0.43        48
+       pratt       0.51      0.40      0.45        48
+     richard       0.39      0.35      0.37        48
+        vish       0.47      0.29      0.36        48
+        zach       0.88      0.96      0.92        48
+
+    accuracy                           0.48       336
+   macro avg       0.48      0.48      0.47       336
+weighted avg       0.48      0.48      0.47       336
+
+
+Confusion Matrix:
+         jared  johnny  luis  pratt  richard  vish  zach
+jared       26       9     0      1       10     1     1
+johnny       9      13     7      3       11     4     1
+luis         6       2    26      6        3     4     1
+pratt        2       5    16     19        1     4     1
+richard      8       5    10      3       17     3     2
+vish         7       7    13      5        2    14     0
+zach         1       1     0      0        0     0    46
+
+Top 10 Feature Importances:
+velocity_std                     0.075043
+rubine_f10_total_abs_rotation    0.071191
+mean_velocity                    0.063651
+rubine_f13_duration              0.063020
+rubine_f11_total_sq_rotation     0.060022
+num_points                       0.057571
+efficiency_ratio                 0.056433
+max_velocity                     0.051908
+rubine_f12_max_speed_sq          0.047252
+rubine_f8_stroke_length          0.042484
+dtype: float64
+
+=== Random Forest Session-Level Majority Vote ===
+Session Accuracy: 1.0000
+
+Session Predictions:
+jared_s3 -> predicted jared | strokes=48 | votes={'johnny': 9, 'jared': 26, 'richard': 10, 'vish': 1, 'zach': 1, 'pratt': 1} | correct=True
+johnny_s3 -> predicted johnny | strokes=48 | votes={'vish': 4, 'richard': 11, 'johnny': 13, 'luis': 7, 'jared': 9, 'pratt': 3, 'zach': 1} | correct=True        
+luis_s3 -> predicted luis | strokes=48 | votes={'vish': 4, 'luis': 26, 'pratt': 6, 'jared': 6, 'richard': 3, 'johnny': 2, 'zach': 1} | correct=True
+pratt_s3 -> predicted pratt | strokes=48 | votes={'vish': 4, 'luis': 16, 'pratt': 19, 'johnny': 5, 'richard': 1, 'jared': 2, 'zach': 1} | correct=True
+richard_s3 -> predicted richard | strokes=48 | votes={'johnny': 5, 'richard': 17, 'zach': 2, 'luis': 10, 'vish': 3, 'jared': 8, 'pratt': 3} | correct=True      
+vish_s3 -> predicted vish | strokes=48 | votes={'johnny': 7, 'pratt': 5, 'jared': 7, 'luis': 13, 'vish': 14, 'richard': 2} | correct=True
+zach_s3 -> predicted zach | strokes=48 | votes={'zach': 46, 'jared': 1, 'johnny': 1} | correct=True
