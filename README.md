@@ -98,17 +98,19 @@ analysis/data/segmented_trials.csv
 
 ---
 
-CSCE624Project/
-├── analysis/
-│ ├── data/
-│ │ └── raw/
-│ └── segment_trials.py
-├── resultsDisplay/
-├── 3d_test_arena.tscn
-├── character_body_3d.gd
-├── main.gd
-├── main.tscn
-└── project.godot
+## Project Structure
+
+- CSCE624Project/
+  - analysis/
+    - data/
+      - raw/
+    - segment_trials.py
+  - resultsDisplay/
+  - 3d_test_arena.tscn
+  - character_body_3d.gd
+  - main.gd
+  - main.tscn
+  - project.godot
 
 ---
 
