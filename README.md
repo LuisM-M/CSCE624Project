@@ -98,7 +98,6 @@ analysis/data/segmented_trials.csv
 
 ---
 
-## Project Structure
 CSCE624Project/
 ├── analysis/
 │ ├── data/
